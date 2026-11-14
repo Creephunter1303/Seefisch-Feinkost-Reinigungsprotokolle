@@ -143,12 +143,13 @@ async function t7Start() {
   else { st("Ordner „" + h.name + "“ ist gespeichert. Der Zugriff muss neu bestätigt werden."); document.getElementById("t7-los").textContent = "Zugriff bestätigen"; document.getElementById("t7-los").dataset.erneut = "1"; }
 }
 document.getElementById("t7-los").addEventListener("click", async (ev) => {
+  const knopf = ev.currentTarget;   // nach einem await ist ev.currentTarget leer
   try {
     let h;
-    if (ev.currentTarget.dataset.erneut) { h = await hGet(); if ((await h.requestPermission({ mode: "read" })) !== "granted") return; delete ev.currentTarget.dataset.erneut; }
+    if (knopf.dataset.erneut) { h = await hGet(); if ((await h.requestPermission({ mode: "read" })) !== "granted") return; delete knopf.dataset.erneut; }
     else { h = await window.showDirectoryPicker({ id: "reinigung", mode: "read", startIn: "documents" }); await hSet(h); }
-    stapel = [h]; zeigeOrdner(h); ev.currentTarget.textContent = "Anderen Ordner freigeben";
-  } catch (e) { st("Abgebrochen oder Fehler: " + e.message); }
+    stapel = [h]; await zeigeOrdner(h); knopf.textContent = "Anderen Ordner freigeben";
+  } catch (e) { st(e.name === "AbortError" ? "Abgebrochen." : "Fehler: " + e.message); }
 });
 t7Start();
 
