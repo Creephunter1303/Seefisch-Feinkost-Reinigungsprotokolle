@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Test: Dateien-App öffnen</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="icons/icon-192.png">
 <!--
   Seefisch-Feinkost · Test für den Knopf „Archiv ansehen“ (14.11.2026)
   Auf dem Tablet in Chrome öffnen und jeden Knopf einmal antippen.
@@ -40,12 +43,18 @@
 </style>
 </head>
 <body>
-<header><h1>Test: Dateien-App öffnen</h1><div class="version">Version 3 · 14.11.2026, 20:40</div></header>
+<header><h1>Test: Dateien-App öffnen</h1><div class="version">Version 4 · 14.11.2026, 20:50</div></header>
 <main>
   <div class="box">
     <label for="pfad">Ordner auf dem Tablet</label>
     <input type="text" id="pfad" value="/storage/emulated/0/Documents/Nachweise/3 Reinigungsprotokolle">
     <p class="klein">Den genauen Pfad zeigt FolderSync beim Ordnerpaar unter „Lokaler Ordner“. Bitte hier eintragen, bevor du die Knöpfe 1 und 3 testest.</p>
+  </div>
+
+  <div class="box test" id="inst">
+    <h2>Als App installieren</h2>
+    <p id="inst-text">Einen Moment …</p>
+    <button class="los" id="inst-los" hidden>App installieren</button>
   </div>
 
   <div class="box" id="ergebnis">Tippe jeden Knopf einmal an und markiere danach „hat geklappt“ oder „ging nicht“. Das Ergebnis steht dann hier.</div>
@@ -107,6 +116,29 @@ document.getElementById("waehler").addEventListener("change", (e) => {
   const f = e.target.files[0]; if (!f) return;
   location.href = URL.createObjectURL(f);
 });
+/* ---------- App installieren ---------- */
+let installEvent = null;
+const instText = (t) => { document.getElementById("inst-text").innerHTML = t; };
+if (window.matchMedia("(display-mode: standalone)").matches) {
+  instText("<b>Läuft als installierte App.</b> Jetzt Test 7 machen, dann App schließen, Tablet neu starten und wieder öffnen.");
+} else {
+  instText("Chrome bietet die Installation noch nicht an. Seite einmal neu laden. Falls der Knopf dann nicht erscheint: Menü ⋮ → „Teilen…“ → „Zum Startbildschirm hinzufügen“.");
+}
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); installEvent = e;
+  document.getElementById("inst-los").hidden = false;
+  instText("Chrome kann diese Seite als App installieren.");
+});
+document.getElementById("inst-los").addEventListener("click", async () => {
+  if (!installEvent) return;
+  installEvent.prompt();
+  const r = await installEvent.userChoice;
+  installEvent = null; document.getElementById("inst-los").hidden = true;
+  instText(r.outcome === "accepted" ? "<b>Installiert.</b> Jetzt die App über das neue Symbol auf dem Startbildschirm öffnen." : "Installation abgebrochen.");
+});
+window.addEventListener("appinstalled", () => instText("<b>Installiert.</b> Jetzt die App über das neue Symbol auf dem Startbildschirm öffnen."));
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+
 /* ---------- Test 7: Ordnerzugriff (File System Access API) ---------- */
 const DB = () => new Promise((ok, fehl) => { const r = indexedDB.open("datei-test", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => fehl(r.error); });
 async function hGet() { try { const d = await DB(); return await new Promise((ok) => { const q = d.transaction("h").objectStore("h").get("ordner"); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
