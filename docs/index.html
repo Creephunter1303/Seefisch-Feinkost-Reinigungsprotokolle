@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reinigung · Maske</title>
+<!--
+  Seefisch-Feinkost · Reinigung · Maske v0.5 (14.11.2026)
+  Reine Ansichts-Maske mit Beispieldaten. Nichts wird gespeichert, Neuladen setzt alles zurück.
+  Ablauf: Startseite mit zwei Knöpfen (Reinigungsprotokoll, Archiv ansehen). Kein Sheet, keine Wochenübersicht.
+  Der dunkle Balken oben („Nur Demo“) gehört nicht zur App.
+-->
+<link rel="stylesheet" href="seefisch.css">
+<style>
+  body { background: #CBD2DA; }
+
+  /* ---------- Demo-Balken (gehört nicht zur App) ---------- */
+  #demo { background: #1F2937; color: #E5E7EB; padding: 8px 14px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+  #demo b { letter-spacing: .06em; font-size: 12px; color: #9CA3AF; text-transform: uppercase; }
+  #demo .g { display: flex; gap: 4px; align-items: center; }
+  #demo button { height: 32px; padding: 0 10px; border-radius: 6px; background: #374151; color: #E5E7EB; font-size: 14px; }
+  #demo button.an { background: #E5E7EB; color: #111827; font-weight: 600; }
+  #buehne { display: flex; justify-content: center; padding: 16px 12px; }
+  #geraet { width: 640px; height: 1072px; background: var(--hintergrund); border-radius: 14px; box-shadow: 0 0 0 10px #1F2937, 0 20px 40px rgba(0,0,0,.25); overflow: hidden; transform-origin: top center; flex-shrink: 0; }
+  body.voll #buehne { padding: 0; }
+  body.voll #geraet { width: 100%; border-radius: 0; box-shadow: none; }
+
+  /* ---------- App-Rahmen ---------- */
+  .r-app { user-select: none; -webkit-user-select: none; height: 100%; display: flex; flex-direction: column; font-size: 18px; color: var(--text); }
+  .r-kopf { background: var(--flaeche); box-shadow: 0 1px 0 var(--linie); padding: 12px 20px; display: flex; align-items: center; gap: 14px; min-height: 80px; z-index: 2; }
+  .r-titel { flex: 1; margin: 0; font-family: var(--schrift-schmal); font-weight: 700; font-size: 26px; letter-spacing: .06em; text-transform: uppercase; }
+  .r-wagen { font-size: 18px; color: var(--text-3); }
+  .r-wagen b { color: var(--text); font-weight: 600; }
+  .r-wahl { background: var(--flaeche); box-shadow: 0 1px 0 var(--linie); padding: 0 20px 16px; display: flex; gap: 10px; z-index: 2; }
+  .r-wahl .r-chip { flex: 1; min-width: 0; min-height: 72px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 600; }
+  .r-wahl small { font-size: 14px; font-weight: 400; color: var(--text-3); text-align: center; line-height: 1.15; }
+  .r-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 20px; }
+  .r-fuss { background: var(--flaeche); box-shadow: 0 -1px 0 var(--linie); padding: 12px 20px 16px; }
+  .r-zwei { display: flex; flex-direction: column; gap: 20px; }
+  .r-spalte { display: flex; flex-direction: column; gap: 20px; }
+  .quer .r-zwei { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  .quer .r-scroll { padding: 20px 24px 24px; }
+
+  /* ---------- Startseite ---------- */
+  .r-heute { background: var(--flaeche); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--linie); padding: 22px 22px 20px; }
+  .r-ueber { margin: 0 0 6px; font-family: var(--schrift-schmal); font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .r-gross { margin: 0; font-family: var(--schrift-schmal); font-weight: 600; font-size: 38px; line-height: 1.1; }
+  .r-markt { margin: 4px 0 0; font-size: 21px; color: var(--text-2); }
+  .r-start-knopf { width: 100%; min-height: 120px; border-radius: 14px; display: flex; align-items: center; gap: 18px; padding: 0 26px; text-align: left; }
+  .r-start-knopf .sym { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .r-start-knopf b { display: block; font-size: 26px; font-weight: 600; line-height: 1.15; }
+  .r-start-knopf small { display: block; margin-top: 4px; font-size: 17px; font-weight: 400; }
+  .r-start-knopf.haupt { background: var(--blau); color: #fff; box-shadow: 0 6px 16px rgba(11,61,102,.3); }
+  .r-start-knopf.haupt .sym { background: rgba(255,255,255,.16); }
+  .r-start-knopf.haupt small { color: #D6E2EE; }
+  .r-start-knopf.neben { background: var(--flaeche); color: var(--blau); box-shadow: inset 0 0 0 2px var(--blau-auswahl-rand); }
+  .r-start-knopf.neben .sym { background: var(--blau-feld); }
+  .r-start-knopf.neben small { color: var(--text-3); }
+  .r-start-knopf.erledigt { background: var(--gruen-flaeche); color: var(--gruen-text); box-shadow: inset 0 0 0 2px var(--gruen-rand); }
+  .r-start-knopf.erledigt .sym { background: var(--gruen-punkt); color: #fff; }
+  .r-start-knopf.erledigt small { color: var(--gruen-name); }
+  .r-start-knopf.aus { background: transparent; color: var(--aus); box-shadow: inset 0 0 0 1.5px #D3DAE2; cursor: default; }
+  .r-start-knopf.aus .sym { background: #EEF1F4; }
+  .r-start-knopf.aus small { color: var(--aus); }
+  .r-balken { height: 10px; border-radius: 5px; background: rgba(255,255,255,.22); margin-top: 10px; overflow: hidden; width: 100%; }
+  .r-balken i { display: block; height: 100%; background: #fff; border-radius: 5px; }
+  .r-klein-knopf { width: 100%; min-height: 64px; border-radius: 10px; background: var(--sekundaer); color: var(--sekundaer-text); box-shadow: inset 0 0 0 1.5px #C5CED8; font-size: 20px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .r-textlink { align-self: center; background: transparent; color: var(--blau); font-size: 18px; font-weight: 600; min-height: 56px; padding: 0 12px; }
+
+  /* ---------- Listen ---------- */
+  .r-lkopf { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 8px; }
+  .r-lkopf h2 { margin: 0; font-family: var(--schrift-schmal); font-weight: 700; font-size: 24px; letter-spacing: .06em; text-transform: uppercase; }
+  .r-lkopf span { font-size: 17px; color: var(--text-3); }
+  .r-liste { background: var(--flaeche); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--linie); overflow: hidden; }
+  .r-reihe { display: flex; align-items: stretch; border-top: 1px solid var(--linie); }
+  .r-reihe:first-child { border-top: 0; }
+  .r-reihe.ok { background: var(--gruen-flaeche); }
+  .r-reihe.nicht { background: var(--rot-flaeche); }
+  .r-zeile { flex: 1; min-width: 0; display: flex; align-items: center; gap: 16px; min-height: 68px; padding: 8px 16px; background: transparent; text-align: left; color: var(--text); }
+  .r-box { width: 40px; height: 40px; border-radius: 8px; border: 3px solid var(--blau-rahmen); background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .r-reihe.ok .r-box { background: var(--gruen-punkt); border-color: var(--gruen-punkt); }
+  .r-reihe.nicht .r-box { background: var(--rot-punkt); border-color: var(--rot-punkt); }
+  .r-ztext b { display: block; font-family: var(--schrift-schmal); font-weight: 600; font-size: 26px; line-height: 1.1; }
+  .r-ztext small { display: block; margin-top: 2px; font-size: 16px; color: var(--text-3); }
+  .r-reihe.ok .r-ztext small { color: var(--gruen-text); font-weight: 600; }
+  .r-reihe.nicht .r-ztext small { color: var(--rot-text); font-weight: 600; }
+  .r-geht { width: 104px; flex-shrink: 0; background: transparent; color: var(--text-3); font-size: 16px; font-weight: 500; border-left: 1px solid var(--linie); line-height: 1.2; }
+  .r-gruende { padding: 12px 16px 16px; background: var(--rot-flaeche); border-top: 1px solid var(--rot-linie); }
+  .r-gruende p { margin: 0 0 10px; font-size: 18px; font-weight: 600; color: var(--rot-text); }
+  .r-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .r-chip { min-height: 56px; padding: 0 18px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1.5px #C5CED8; font-size: 19px; color: var(--text-2); }
+  .r-chip.an { background: var(--blau-aktiv); box-shadow: inset 0 0 0 2px var(--blau-aktiv-rand); color: var(--blau); font-weight: 600; }
+  .r-block { background: var(--flaeche); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--linie); padding: 20px; }
+  .r-frage { margin: 20px 0 10px; font-size: 19px; font-weight: 600; }
+  .r-frage:first-child { margin-top: 0; }
+  .r-frage button { float: right; background: transparent; color: var(--blau); font-size: 17px; font-weight: 600; padding: 0 4px; }
+  .r-sig { display: block; width: 100%; height: 170px; border-radius: 8px; background: #fff; box-shadow: inset 0 0 0 2px var(--blau-rahmen); touch-action: none; }
+  .r-sig.fest { box-shadow: inset 0 0 0 1px var(--linie); }
+  .r-lade { width: 100%; display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 2px var(--blau-rahmen); text-align: left; color: var(--text); min-height: 72px; }
+  .r-lade.ok { background: var(--gruen-flaeche); box-shadow: inset 0 0 0 2px var(--gruen-rand); color: var(--gruen-text); }
+  .r-lade .sym { width: 44px; height: 44px; border-radius: 50%; background: var(--blau-feld); color: var(--blau); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .r-lade.ok .sym { background: var(--gruen-punkt); color: #fff; }
+  .r-lade b { display: block; font-size: 20px; font-weight: 600; }
+  .r-lade small { display: block; font-size: 16px; }
+  .r-haupt { width: 100%; min-height: 72px; border-radius: 12px; background: var(--blau); color: #fff; font-size: 23px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .r-haupt.wartet { background: #C7CFD8; color: var(--text-3); }
+  .r-hinweis { padding: 14px 16px; border-radius: 10px; background: var(--hinweis-flaeche); box-shadow: inset 0 0 0 1px var(--hinweis-rand); color: var(--hinweis-text); font-size: 18px; }
+  .r-gesperrt { display: flex; gap: 12px; align-items: center; padding: 16px 20px; border-radius: 12px; background: var(--gruen-flaeche); box-shadow: inset 0 0 0 2px var(--gruen-rand); color: var(--gruen-text); font-size: 19px; }
+  .r-gesperrt .p { width: 30px; height: 30px; border-radius: 50%; background: var(--gruen-punkt); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* ---------- Archiv-Vorschau (so ähnlich sieht es in der Dateien-App aus) ---------- */
+  .r-pfad { font-size: 17px; color: var(--text-3); padding: 0 4px; }
+  .r-pfad b { color: var(--text-2); font-weight: 600; }
+  .r-datei { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 8px 16px; border-top: 1px solid var(--linie); background: transparent; text-align: left; color: var(--text); font-size: 18px; }
+  .r-liste .r-datei:first-child { border-top: 0; }
+  .r-datei .ic { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: 700; }
+  .r-datei .ic.pdf { background: #FBEAEA; color: #B42323; }
+  .r-datei .ic.ordner { background: var(--blau-feld); color: var(--blau); }
+  .r-datei .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .r-datei .info { font-size: 15px; color: var(--text-3); white-space: nowrap; }
+
+  /* ---------- Dokument (Protokoll, Reinigungsplan) ---------- */
+  .r-blatt { background: #fff; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,.12); font-size: 17px; line-height: 1.4; }
+  .r-blatt .firma { font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+  .r-blatt h2 { margin: 6px 0 2px; font-family: var(--schrift-schmal); font-weight: 700; font-size: 30px; }
+  .r-blatt h3 { margin: 22px 0 8px; font-size: 18px; font-weight: 600; }
+  .r-blatt table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .r-blatt th, .r-blatt td { border: 1px solid #9AA5B1; padding: 9px 10px; text-align: left; vertical-align: top; }
+  .r-blatt th { background: #EEF1F4; font-weight: 600; }
+  .r-blatt table.r-kd th { width: 120px; }
+  .r-blatt ul { margin: 0; padding-left: 22px; }
+  .r-blatt .unt { margin-top: 18px; }
+  .r-blatt .unt img, .r-blatt .unt .leerfeld { display: block; margin-top: 8px; width: 240px; height: 76px; border: 1px dashed #9AA5B1; object-fit: contain; }
+  .r-blatt .unt .leerfeld { display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-3); }
+  .r-blatt .fn { margin-top: 16px; font-size: 14px; color: var(--text-3); }
+  .r-einst-wert { font-size: 19px; color: var(--text-2); text-align: right; }
+</style>
+</head>
+<body>
+
+<div id="demo">
+  <b>Nur Demo</b>
+  <span class="g">Heute ist: <span id="d-tag"></span></span>
+  <span class="g">Ladekabel: <span id="d-kabel"></span></span>
+  <span class="g">Netz: <span id="d-netz"></span></span>
+  <span class="g">Ansicht: <span id="d-ansicht"></span></span>
+  <span class="g"><button data-demo="fuellen">Samstagsliste ausfüllen</button><button data-demo="neu">Zurücksetzen</button></span>
+</div>
+<div id="buehne"><div id="geraet"><div id="app" class="r-app"></div></div></div>
+
+<script>
+/* ============================ Stammdaten ============================ */
+const TAGE = [
+  { k: "Di", lang: "Dienstag", nr: 10 }, { k: "Mi", lang: "Mittwoch", nr: 11 }, { k: "Do", lang: "Donnerstag", nr: 12 },
+  { k: "Fr", lang: "Freitag", nr: 13 }, { k: "Sa", lang: "Samstag", nr: 14 },
+];
+const WAGEN = ["Seico", "Borco Neu", "Borco Alt"];
+const MARKT = {
+  Di: { "Seico": "REWE Groß Ilsede" },
+  Mi: { "Seico": "Stadtmarkt Wolfsburg", "Borco Neu": "Stadtmarkt Celle" },
+  Do: { "Seico": "Uetze", "Borco Neu": "Stederdorf", "Borco Alt": "Ölsburg E-Center" },
+  Fr: { "Seico": "Celle Weststadt / Isenbüttel", "Borco Neu": "Groß Schwülper", "Borco Alt": "Vorsfelde Wolfsburg" },
+  Sa: { "Seico": "Stadtmarkt Wolfsburg", "Borco Neu": "Stadtmarkt Celle", "Borco Alt": "Hildesheim" },
+};
+const TAEGLICH = {
+  reinigen: ["Arbeitsflächen", "Waschbecken", "Boden (Besen)", "Glasscheiben", "Messer, Schneidbretter, Schalen", "Waage", "Müll entsorgt"],
+  sicht: ["Auslage", "Bunker", "Wände unten"],
+};
+const SAMSTAG = {
+  reinigen: ["Boden gewischt", "Auslage komplett", "Bunker komplett", "Wände unten", "Arbeitsflächen", "Waage", "Scheiben vorne an der Auslage",
+    "Wasser für Waschbecken getauscht", "Messer und Schalen gründlich", "Abfluss", "Mülleimer", "Tauwassertank entleert und gereinigt"],
+  sicht: ["Wände oben", "Obere Scheiben über dem Tresen", "Decke", "Lampen und Kameras", "Schränke", "Kühlung: Dichtungen, Lüftungsgitter", "Tauwassertank"],
+};
+const VERANTWORTLICH = "Michael Kropp";
+const AUSFUELLER = ["Michael Kropp", "Max Kropp", "Anna", "Ben"];   // Anna, Ben = Platzhalter für Verkaufspersonal
+const PUTZKOLONNE = ["Anna", "Ben", "Clara", "Dirk"];              // Platzhalter
+const GRUENDE = ["Nicht nötig", "Kein Wasser", "Keine Zeit", "Defekt", "Mittel fehlt"];
+const ABLAGE = "20:00";
+const ORDNER = "Reinigung/Protokolle";
+const START = { Di: 13 * 60 + 10, Mi: 13 * 60 + 40, Do: 13 * 60 + 20, Fr: 18 * 60 + 15, Sa: 14 * 60 + 30 };
+
+function punkte(l, vor) { return l.reinigen.map((t, i) => ({ id: vor + "r" + i, text: t, art: "r" })).concat(l.sicht.map((t, i) => ({ id: vor + "s" + i, text: t, art: "s" }))); }
+const P_TAG = punkte(TAEGLICH, "t"), P_SA = punkte(SAMSTAG, "s");
+
+/* ============================ Zustand ============================ */
+const Z = { heute: 0, wagen: "Seico", kabel: "aus", netz: "an", ansicht: "hoch", seite: "start", wahl: false, form: null, grundFuer: null, datei: null, ladeCheck: true };
+let G = {};     // gespeicherte Protokolle: G["Do|Seico"] = { art: "tag" | "sa", p, wer/namen, sig, zeit, wartet, pct }
+let tick = 0, akku = null;
+if (navigator.getBattery) navigator.getBattery().then((b) => { akku = b; b.onchargingchange = b.onlevelchange = () => { if (Z.kabel === "echt") render(); }; }).catch(() => {});
+
+const hk = () => TAGE[Z.heute].k;
+const tagObj = (k) => TAGE.find((t) => t.k === k);
+const datum = (k) => tagObj(k).lang + ", " + tagObj(k).nr + ".11.2026";
+const schluessel = (k, w) => k + "|" + w;
+function zeit() { const m = START[hk()] + tick++; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function dateiname(k, w) { return "2026-11-" + String(tagObj(k).nr).padStart(2, "0") + "_" + k + "_" + w.replace(/ /g, "-") + ".pdf"; }
+
+function aufbau() {
+  G = {}; tick = 0;
+  // Beispiel: am Donnerstag hat das Seico-Team selbst ein Protokoll mit Abweichung gespeichert
+  if (Z.heute > 2) {
+    const p = {}; P_TAG.forEach((x) => { p[x.id] = { s: "ok" }; }); p.tr3 = { s: "nicht", grund: "Kein Wasser" };
+    G[schluessel("Do", "Seico")] = { art: "tag", p, wer: "Anna", sig: sigBeispiel(), zeit: "13:05" };
+  }
+  Z.seite = "start"; Z.wahl = false; Z.form = null; Z.grundFuer = null; Z.datei = null;
+}
+function laedt() {
+  if (Z.kabel === "an") return { l: true, pct: 64 };
+  if (Z.kabel === "aus") return { l: false, pct: 64 };
+  return akku ? { l: akku.charging, pct: Math.round(akku.level * 100) } : null;
+}
+function wartend() { return Object.keys(G).filter((s) => s.endsWith("|" + Z.wagen) && G[s].wartet).length; }
+
+/* ============================ Symbole ============================ */
+const svg = (d, g = 20, w = 2.6) => '<svg width="' + g + '" height="' + g + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + w + '" stroke-linecap="round" stroke-linejoin="round">' + d + "</svg>";
+const I = {
+  haken: (g) => svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', g || 20, 3),
+  kreuz: (g) => svg('<path d="M6 6l12 12M18 6L6 18"/>', g || 20, 3),
+  runter: svg('<path d="M6 9l6 6 6-6"/>', 20),
+  zurueck: svg('<path d="M15 5l-7 7 7 7"/>', 22),
+  blatt: (g) => svg('<path d="M7 3h7l4 4v14H7z"/><path d="M10 12h5M10 16h5"/>', g || 22, 2),
+  liste: svg('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>', 30, 2.2),
+  ordner: svg('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', 30, 2.2),
+  kabel: svg('<path d="M9 3v5M15 3v5M7 8h10v4a5 5 0 0 1-10 0zM12 17v4"/>', 24, 2.2),
+  zahnrad: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>', 28, 2),
+};
+
+/* ============================ Kopf ============================ */
+function syncAnz() {
+  if (Z.netz === "an") return '<span class="sync-punkt" title="verbunden"></span>';
+  const n = wartend(); return '<span class="sync-text">Offline' + (n ? " · " + n + " wartet" : "") + "</span>";
+}
+function kopf(titel, zurueck) {
+  if (!zurueck) return '<div class="r-kopf"><button class="auswahl" data-a="wahl">' + esc(Z.wagen) + I.runter + '</button><span class="platzhalter"></span>' + syncAnz() +
+    '<button class="icon-knopf" data-a="einst" aria-label="Einstellungen">' + I.zahnrad + "</button></div>" +
+    (Z.wahl ? '<div class="r-wahl">' + WAGEN.map((w) => '<button class="r-chip' + (w === Z.wagen ? " an" : "") + '" data-a="wagen" data-w="' + w + '">' + w + "<small>" + esc(MARKT[hk()][w] || "kein Einsatz") + "</small></button>").join("") + "</div>" : "");
+  return '<div class="r-kopf"><button class="zurueck" data-a="' + (zurueck === true ? "heim" : zurueck) + '">' + I.zurueck + "Zurück</button>" +
+    '<h1 class="r-titel">' + esc(titel) + '</h1><span class="r-wagen">Wagen <b>' + esc(Z.wagen) + "</b></span></div>";
+}
+
+/* ============================ Startseite ============================ */
+function vStart() {
+  const k = hk(), w = Z.wagen, markt = MARKT[k][w], g = G[schluessel(k, w)], sa = k === "Sa";
+  let knopf;
+  if (!markt) {
+    knopf = '<button class="r-start-knopf aus" disabled><span class="sym">' + I.liste + "</span><span><b>Reinigungsprotokoll</b><small>Heute kein Einsatz für diesen Wagen</small></span></button>";
+  } else if (g) {
+    const sub = g.wartet ? "Gespeichert um " + g.zeit + " · wartet auf Netz" : "Gespeichert um " + g.zeit + " · liegt im Archiv";
+    knopf = '<button class="r-start-knopf erledigt" data-a="formular"><span class="sym">' + I.haken(30) + "</span><span><b>" + (sa ? "Große Reinigung erledigt" : "Protokoll gespeichert") + "</b><small>" + sub + "</small></span></button>";
+  } else if (sa) {
+    const n = Z.form && Z.form.art === "sa" ? P_SA.filter((p) => Z.form.p[p.id]).length : 0;
+    knopf = '<button class="r-start-knopf haupt" data-a="formular"><span class="sym">' + I.liste + "</span><span style=\"flex:1\"><b>Große Reinigung</b><small>" + (n ? n + " von " + P_SA.length + " Punkten erledigt" : "Samstag · " + P_SA.length + " Punkte") + "</small>" +
+      (n ? '<span class="r-balken"><i style="width:' + Math.round((n / P_SA.length) * 100) + '%"></i></span>' : "") + "</span></button>";
+  } else {
+    knopf = '<button class="r-start-knopf haupt" data-a="formular"><span class="sym">' + I.liste + "</span><span><b>Reinigungsprotokoll</b><small>Tagesreinigung nach dem Markt</small></span></button>";
+  }
+  const hinweis = g && g.wartet ? '<div class="r-hinweis"><b>Noch nicht gesendet.</b> Wird automatisch hochgeladen, sobald wieder Netz da ist.</div>' : "";
+  return kopf() + '<div class="r-scroll">' +
+    '<div class="r-heute"><p class="r-ueber">Heute</p><h2 class="r-gross">' + datum(k).replace(".2026", ".") + '</h2><p class="r-markt">' + esc(markt || "Kein Einsatz") + "</p></div>" +
+    knopf + hinweis +
+    '<button class="r-start-knopf neben" data-a="archiv"><span class="sym">' + I.ordner + "</span><span><b>Archiv ansehen</b><small>Alle Protokolle als PDF</small></span></button>" +
+    '<button class="r-textlink" data-a="plan">Reinigungsplan ansehen</button></div>';
+}
+
+/* ============================ Formular (Tag und Samstag) ============================ */
+function neuesFormular() {
+  const sa = hk() === "Sa", g = G[schluessel(hk(), Z.wagen)];
+  if (g) return JSON.parse(JSON.stringify({ art: g.art, p: g.p, wer: g.wer || null, namen: g.namen || [], sig: g.sig }));
+  return { art: sa ? "sa" : "tag", p: {}, wer: null, namen: [], sig: null, kabelHand: false };
+}
+function fehlt(f) {
+  const pk = f.art === "sa" ? P_SA : P_TAG, offen = pk.filter((p) => !f.p[p.id]).length;
+  if (offen) return "Noch " + offen + (offen === 1 ? " Punkt offen" : " Punkte offen");
+  if (f.art === "tag" && !f.wer) return "Bitte Namen wählen";
+  if (f.art === "sa" && !f.namen.length) return "Bitte Namen wählen";
+  if (!f.sig) return "Bitte unterschreiben";
+  if (f.art === "sa" && Z.ladeCheck) { const ld = laedt(); if (ld ? !ld.l : !f.kabelHand) return "Ladekabel fehlt noch"; }
+  return "";
+}
+function vFormular() {
+  const f = Z.form, sa = f.art === "sa", pk = sa ? P_SA : P_TAG;
+  const zeile = (p) => {
+    const e = f.p[p.id], cls = e ? (e.s === "ok" ? " ok" : " nicht") : "";
+    const sub = e ? (e.s === "ok" ? (p.art === "r" ? "Erledigt" : "In Ordnung") : (e.grund === "Nicht nötig" ? "Nicht nötig" : "Nicht gemacht: " + e.grund)) : "";
+    let h = '<div class="r-reihe' + cls + '"><button class="r-zeile" data-a="p" data-id="' + p.id + '"><span class="r-box">' + (e ? (e.s === "ok" ? I.haken(24) : I.kreuz(22)) : "") + '</span><span class="r-ztext"><b>' + esc(p.text) + "</b>" + (sub ? "<small>" + esc(sub) + "</small>" : "") + "</span></button>" +
+      (e ? "" : '<button class="r-geht" data-a="geht" data-id="' + p.id + '">geht<br>nicht</button>') + "</div>";
+    if (Z.grundFuer === p.id) h += '<div class="r-gruende"><p>Warum nicht?</p><div class="r-chips">' + GRUENDE.map((gr) => '<button class="r-chip" data-a="grund" data-id="' + p.id + '" data-g="' + gr + '">' + gr + "</button>").join("") + "</div></div>";
+    return h;
+  };
+  const liste = (titel, l) => '<div><div class="r-lkopf"><h2>' + titel + "</h2><span>" + l.filter((p) => f.p[p.id]).length + " von " + l.length + '</span></div><div class="r-liste">' + l.map(zeile).join("") + "</div></div>";
+  const rein = pk.filter((p) => p.art === "r"), sicht = pk.filter((p) => p.art === "s");
+  let unten = "";
+  if (sa && Z.ladeCheck) {
+    const ld = laedt();
+    unten += '<p class="r-frage">Tablet</p>' + (ld
+      ? '<div class="r-lade' + (ld.l ? " ok" : "") + '"><span class="sym">' + I.kabel + "</span><span><b>" + (ld.l ? "Tablet lädt" : "Tablet ans Ladekabel anschließen") + "</b><small>" + (ld.l ? "Akku " + ld.pct + " %" : "Wird automatisch erkannt · Akku " + ld.pct + " %") + "</small></span></div>"
+      : '<button class="r-lade' + (f.kabelHand ? " ok" : "") + '" data-a="kabel"><span class="sym">' + (f.kabelHand ? I.haken(24) : I.kabel) + "</span><span><b>Tablet hängt am Ladekabel</b><small>Bitte antippen, wenn das Kabel steckt</small></span></button>");
+  }
+  unten += sa
+    ? '<p class="r-frage">Wer hat gereinigt?</p><div class="r-chips">' + PUTZKOLONNE.map((n) => '<button class="r-chip' + (f.namen.includes(n) ? " an" : "") + '" data-a="namen" data-n="' + n + '">' + n + "</button>").join("") + "</div>"
+    : '<p class="r-frage">Wer füllt aus?</p><div class="r-chips">' + AUSFUELLER.map((n) => '<button class="r-chip' + (f.wer === n ? " an" : "") + '" data-a="wer" data-n="' + n + '">' + n + "</button>").join("") + "</div>";
+  unten += '<p class="r-frage">Unterschrift' + (f.sig ? '<button data-a="sig-weg">Löschen</button>' : "") + '</p><canvas class="r-sig" id="sig"></canvas>';
+  const alleOk = pk.every((p) => f.p[p.id]);
+  const fl = fehlt(f);
+  return kopf(sa ? "Große Reinigung" : "Reinigungsprotokoll", true) + '<div class="r-scroll">' +
+    (alleOk ? "" : '<button class="r-klein-knopf" data-a="alle">' + I.haken(22) + "Alles erledigt</button>") +
+    '<div class="r-zwei">' + liste("Reinigen", rein) + '<div class="r-spalte">' + liste("Sichtprüfung", sicht) + '<div class="r-block">' + unten + "</div></div></div></div>" +
+    '<div class="r-fuss"><button class="r-haupt' + (fl ? " wartet" : "") + '" data-a="speichern">' + (fl || "Protokoll speichern") + "</button></div>";
+}
+
+/* ============================ Archiv (Vorschau der Dateien-App) ============================ */
+function archivDateien() {
+  const l = [];
+  TAGE.forEach((t, i) => {
+    if (i > Z.heute) return;
+    WAGEN.forEach((w) => {
+      if (!MARKT[t.k][w]) return;
+      const g = G[schluessel(t.k, w)];
+      if (g && g.wartet) return;                                   // noch nicht hochgeladen
+      if (!g && (i === Z.heute || t.k === "Sa")) return;           // heute 20:00 noch nicht erreicht; Samstag wird nie automatisch erzeugt
+      l.push({ k: t.k, w, name: dateiname(t.k, w), auto: !g });
+    });
+  });
+  return l.reverse();
+}
+function vArchiv() {
+  const d = archivDateien();
+  const zeilen = '<button class="r-datei" disabled><span class="ic ordner">' + svg('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', 20, 2.2) + '</span><span class="nm">Archiv</span><span class="info">Okt., Sep., … 2025</span></button>' +
+    d.map((x) => '<button class="r-datei" data-a="datei" data-k="' + x.k + '" data-w="' + x.w + '"><span class="ic pdf">PDF</span><span class="nm">' + x.name + '</span><span class="info">' + (x.auto ? "automatisch" : "am Tablet") + "</span></button>").join("");
+  return kopf("Archiv", true) + '<div class="r-scroll"><div class="r-hinweis"><b>Vorschau.</b> In der echten App öffnet dieser Knopf die Dateien-App im Ordner ' + ORDNER + '. So ähnlich sieht es dort aus.</div>' +
+    '<div class="r-pfad">Dateien › Reinigung › <b>Protokolle</b></div><div class="r-liste">' + zeilen + "</div></div>";
+}
+
+/* ============================ PDF-Vorschau ============================ */
+function vDatei() {
+  const { k, w } = Z.datei, g = G[schluessel(k, w)], m = MARKT[k][w];
+  const kd = '<div class="firma">Seefisch-Feinkost</div><h2>' + (k === "Sa" ? "Samstagsprotokoll · Große Reinigung" : "Tagesprotokoll Reinigung") + '</h2><table class="r-kd"><tr><th>Datum</th><td>' + datum(k) + "</td></tr><tr><th>Wagen</th><td>" + esc(w) + "</td></tr><tr><th>Markt</th><td>" + esc(m) + "</td></tr></table>";
+  let inhalt;
+  if (!g) {
+    inhalt = '<table class="r-kd"><tr><th>Reinigung</th><td>Tagesreinigung nach Reinigungsplan durchgeführt – keine Abweichung gemeldet.</td></tr></table>' +
+      '<div class="unt">Verantwortlich: <b>' + VERANTWORTLICH + '</b><div class="leerfeld">Unterschrift wird hinterlegt</div></div>' +
+      '<div class="fn">Automatisch erstellt am ' + tagObj(k).nr + ".11.2026 um " + ABLAGE + " Uhr, weil am Tablet kein Protokoll gespeichert wurde. Grundlage ist der Reinigungsplan.</div>";
+  } else {
+    const pk = g.art === "sa" ? P_SA : P_TAG;
+    const z = (p) => { const e = g.p[p.id]; return "<tr><td>" + esc(p.text) + "</td><td>" + (e.s === "ok" ? (p.art === "r" ? "erledigt" : "in Ordnung") : esc(e.grund === "Nicht nötig" ? "nicht nötig" : "nicht gemacht: " + e.grund)) + "</td></tr>"; };
+    inhalt = "<table><tr><th>Reinigen</th><th>Stand</th></tr>" + pk.filter((p) => p.art === "r").map(z).join("") + "</table>" +
+      "<table><tr><th>Sichtprüfung</th><th>Stand</th></tr>" + pk.filter((p) => p.art === "s").map(z).join("") + "</table>" +
+      '<div class="unt">' + (g.art === "sa" ? "Gereinigt von: <b>" + esc(g.namen.join(", ")) : "Ausgefüllt von: <b>" + esc(g.wer)) + '</b><img src="' + g.sig + '" alt="Unterschrift"></div>' +
+      '<div class="unt">Verantwortlich: <b>' + VERANTWORTLICH + "</b></div>" +
+      '<div class="fn">Am Tablet im Wagen gespeichert um ' + g.zeit + " Uhr." + (g.pct ? " Tablet am Ladekabel, Akku " + g.pct + " %." : "") + "</div>";
+  }
+  return kopf(dateiname(k, w).replace(".pdf", ""), "archiv") + '<div class="r-scroll"><div class="r-blatt">' + kd + inhalt + "</div></div>";
+}
+
+/* ============================ Reinigungsplan ============================ */
+function vPlan() {
+  const ul = (a) => "<ul>" + a.map((t) => "<li>" + esc(t) + "</li>").join("") + "</ul>";
+  return kopf("Reinigungsplan", true) + '<div class="r-scroll"><div class="r-blatt"><div class="firma">Seefisch-Feinkost</div><h2>Reinigungsplan Verkaufswagen</h2><div>Gilt für Seico, Borco Neu und Borco Alt</div>' +
+    "<h3>Täglich nach dem Markt (Verkaufspersonal)</h3><table><tr><th>Reinigen</th><th>Sichtprüfung, bei Bedarf nacharbeiten</th></tr><tr><td>" + ul(TAEGLICH.reinigen) + "</td><td>" + ul(TAEGLICH.sicht) + "</td></tr></table>" +
+    "<h3>Samstag: große Reinigung (Putzkolonne)</h3><table><tr><th>Reinigen</th><th>Sichtprüfung</th></tr><tr><td>" + ul(SAMSTAG.reinigen) + "</td><td>" + ul(SAMSTAG.sicht) + "</td></tr></table>" +
+    "<h3>Mittel</h3><ul><li>Zweckreiniger (Produkt wird noch geprüft)</li><li>Desinfektionsmittel (Produkt wird noch geprüft)</li></ul>" +
+    "<h3>Nachweis</h3><ul><li>Täglich: ein Tagesprotokoll je Wagen als PDF. Wird am Tablet keins gespeichert, entsteht um " + ABLAGE + " Uhr automatisch eins nach Reinigungsplan.</li><li>Samstags: Samstagsprotokoll je Wagen, von der Putzkolonne am Tablet abgehakt und unterschrieben.</li></ul>" +
+    '<div class="unt">Verantwortlich: <b>' + VERANTWORTLICH + "</b></div></div></div>";
+}
+
+/* ============================ Einstellungen (nur Maske) ============================ */
+function vEinst() {
+  const kipp = (k) => '<button class="kipp' + (Z[k] ? " an" : "") + '" data-a="kipp" data-k="' + k + '" aria-label="Schalter"></button>';
+  return kopf("Einstellungen", true) + '<div class="r-scroll">' +
+    '<div class="abschnitt"><h2>Dieses Tablet</h2><p class="r-frage">Gehört zu Wagen</p><div class="r-chips">' + WAGEN.map((w) => '<button class="r-chip' + (w === Z.wagen ? " an" : "") + '" data-a="wagen" data-w="' + w + '">' + w + "</button>").join("") + "</div>" +
+    '<div class="schalter-zeile"><div class="schalter-text"><strong>Archiv-Ordner</strong><span>Ordner auf dem Tablet, den FolderSync füllt.</span></div><span class="r-einst-wert">' + ORDNER + "</span></div></div>" +
+    '<div class="abschnitt"><h2>Große Reinigung</h2><div class="schalter-zeile"><div class="schalter-text"><strong>Ladekabel prüfen</strong><span>Speichern geht nur, wenn das Tablet lädt.</span></div>' + kipp("ladeCheck") + "</div></div>" +
+    '<div class="abschnitt"><h2>App</h2><div class="schalter-zeile"><div class="schalter-text"><strong>Version</strong><span>Maske v0.5 mit Beispieldaten. Namen und Schalter sind Platzhalter.</span></div></div></div></div>';
+}
+
+/* ============================ Zeichnen & Klicks ============================ */
+const app = document.getElementById("app");
+function render() {
+  const alt = app.querySelector(".r-scroll"), pos = alt && app.dataset.seite === Z.seite ? alt.scrollTop : 0;
+  app.innerHTML = { start: vStart, formular: vFormular, archiv: vArchiv, datei: vDatei, plan: vPlan, einst: vEinst }[Z.seite]();
+  app.dataset.seite = Z.seite;
+  const neu = app.querySelector(".r-scroll"); if (neu) neu.scrollTop = pos;
+  sigAn(); demoBalken();
+}
+function sigAn() {
+  const c = document.getElementById("sig"); if (!c) return;
+  c.width = c.clientWidth; c.height = c.clientHeight;
+  const x = c.getContext("2d"); x.lineWidth = 3; x.lineCap = "round"; x.lineJoin = "round"; x.strokeStyle = "#111827";
+  const f = Z.form;
+  if (f.sig) { const b = new Image(); b.onload = () => x.drawImage(b, 0, 0, c.width, c.height); b.src = f.sig; }
+  let an = false;
+  const pt = (e) => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) * (c.width / r.width), (e.clientY - r.top) * (c.height / r.height)]; };
+  c.onpointerdown = (e) => { an = true; c.setPointerCapture(e.pointerId); const [a, b] = pt(e); x.beginPath(); x.moveTo(a, b); };
+  c.onpointermove = (e) => { if (!an) return; const [a, b] = pt(e); x.lineTo(a, b); x.stroke(); };
+  c.onpointerup = c.onpointercancel = () => { if (!an) return; an = false; f.sig = c.toDataURL(); render(); };
+}
+
+app.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-a]"); if (!b || b.disabled) return;
+  const a = b.dataset.a, f = Z.form;
+  if (a === "heim") { Z.seite = "start"; Z.wahl = false; Z.grundFuer = null; }
+  else if (a === "wahl") Z.wahl = !Z.wahl;
+  else if (a === "wagen") { Z.wagen = b.dataset.w; Z.wahl = false; Z.form = null; }
+  else if (a === "einst") { Z.seite = "einst"; Z.wahl = false; }
+  else if (a === "kipp") Z[b.dataset.k] = !Z[b.dataset.k];
+  else if (a === "plan") Z.seite = "plan";
+  else if (a === "archiv") { Z.seite = "archiv"; Z.wahl = false; }
+  else if (a === "datei") { Z.datei = { k: b.dataset.k, w: b.dataset.w }; Z.seite = "datei"; }
+  else if (a === "formular") { if (!Z.form || G[schluessel(hk(), Z.wagen)]) Z.form = neuesFormular(); Z.seite = "formular"; Z.wahl = false; }
+  else if (a === "p") { const id = b.dataset.id; if (f.p[id]) delete f.p[id]; else f.p[id] = { s: "ok" }; Z.grundFuer = null; }
+  else if (a === "geht") Z.grundFuer = Z.grundFuer === b.dataset.id ? null : b.dataset.id;
+  else if (a === "grund") { f.p[b.dataset.id] = { s: "nicht", grund: b.dataset.g }; Z.grundFuer = null; }
+  else if (a === "alle") { (f.art === "sa" ? P_SA : P_TAG).forEach((p) => { if (!f.p[p.id]) f.p[p.id] = { s: "ok" }; }); Z.grundFuer = null; }
+  else if (a === "wer") f.wer = b.dataset.n;
+  else if (a === "namen") { const n = b.dataset.n, i = f.namen.indexOf(n); i < 0 ? f.namen.push(n) : f.namen.splice(i, 1); }
+  else if (a === "kabel") f.kabelHand = !f.kabelHand;
+  else if (a === "sig-weg") f.sig = null;
+  else if (a === "speichern") {
+    if (!fehlt(f)) {
+      const ld = laedt();
+      G[schluessel(hk(), Z.wagen)] = { art: f.art, p: f.p, wer: f.wer, namen: f.namen, sig: f.sig, zeit: zeit(), wartet: Z.netz === "aus", pct: f.art === "sa" && ld ? ld.pct : null };
+      Z.form = null; Z.seite = "start";
+    }
+  }
+  render();
+});
+
+/* ============================ Demo-Balken ============================ */
+function knoepfe(el, werte, aktiv, name) { el.innerHTML = werte.map(([v, t]) => '<button data-demo="' + name + '" data-v="' + v + '"' + (String(v) === String(aktiv) ? ' class="an"' : "") + ">" + t + "</button>").join(""); }
+function demoBalken() {
+  knoepfe(document.getElementById("d-tag"), TAGE.map((t, i) => [i, t.k]), Z.heute, "tag");
+  knoepfe(document.getElementById("d-kabel"), [["aus", "steckt nicht"], ["an", "steckt"], ["echt", "echt (dieses Gerät)"]], Z.kabel, "kabel");
+  knoepfe(document.getElementById("d-netz"), [["an", "verbunden"], ["aus", "ohne Netz"]], Z.netz, "netz");
+  knoepfe(document.getElementById("d-ansicht"), [["hoch", "Tablet hoch"], ["quer", "Tablet quer"], ["voll", "ganzes Fenster"]], Z.ansicht, "ansicht");
+}
+function sigBeispiel() {
+  const c = document.createElement("canvas"); c.width = 560; c.height = 170; const x = c.getContext("2d");
+  x.lineWidth = 3; x.lineCap = "round"; x.strokeStyle = "#111827"; x.beginPath(); x.moveTo(120, 110);
+  x.bezierCurveTo(140, 20, 180, 150, 200, 80); x.bezierCurveTo(215, 40, 240, 140, 262, 92); x.bezierCurveTo(280, 60, 300, 120, 330, 88); x.bezierCurveTo(360, 60, 390, 110, 440, 78); x.stroke();
+  return c.toDataURL();
+}
+document.getElementById("demo").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-demo]"); if (!b) return;
+  const d = b.dataset.demo, v = b.dataset.v;
+  if (d === "tag") { Z.heute = +v; aufbau(); }
+  else if (d === "kabel") Z.kabel = v;
+  else if (d === "netz") { Z.netz = v; if (v === "an") Object.values(G).forEach((g) => { delete g.wartet; }); }
+  else if (d === "ansicht") { Z.ansicht = v; passeAn(); }
+  else if (d === "neu") aufbau();
+  else if (d === "fuellen") {
+    Z.heute = 4; aufbau();
+    Z.form = { art: "sa", p: {}, wer: null, namen: ["Anna", "Ben"], sig: sigBeispiel(), kabelHand: false };
+    P_SA.forEach((p) => { Z.form.p[p.id] = { s: "ok" }; });
+    Z.seite = "formular";
+  }
+  render();
+});
+function passeAn() {
+  const g = document.getElementById("geraet"), voll = Z.ansicht === "voll";
+  document.body.classList.toggle("voll", voll);
+  const frei = window.innerHeight - document.getElementById("demo").offsetHeight;
+  let b = 640, h = 1072; if (Z.ansicht === "quer") { b = 1072; h = 640; }
+  if (voll) { g.style.cssText = "height:" + frei + "px"; app.classList.toggle("quer", window.innerWidth > 900); return; }
+  const f = Math.min(1, (frei - 44) / h, (window.innerWidth - 44) / b);
+  g.style.cssText = "width:" + b + "px;height:" + h + "px;transform:scale(" + f + ");margin-bottom:" + (h * f - h) + "px";
+  app.classList.toggle("quer", Z.ansicht === "quer");
+}
+window.addEventListener("resize", passeAn);
+aufbau(); render(); passeAn();
+</script>
+</body>
+</html>

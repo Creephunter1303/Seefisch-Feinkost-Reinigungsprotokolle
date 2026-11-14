@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: Dateien-App öffnen</title>
+<!--
+  Seefisch-Feinkost · Test für den Knopf „Archiv ansehen“ (14.11.2026)
+  Auf dem Tablet in Chrome öffnen und jeden Knopf einmal antippen.
+  Prüft, ob eine Web-App die Dateien-App direkt im Archiv-Ordner öffnen kann.
+-->
+<style>
+  :root { --blau: #0B3D66; --rand: #4F79A3; --feld: #E3ECF5; --gruen: #1E7A3C; --gruen-f: #E2F3E7; --rot: #B42323; --rot-f: #FBEAEA; --grau: #3F4856; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #E8ECF0; color: #111827; font-family: system-ui, sans-serif; font-size: 18px; }
+  header { background: #fff; padding: 16px 20px; box-shadow: 0 1px 0 #D5DCE3; }
+  h1 { margin: 0; font-size: 24px; letter-spacing: .04em; text-transform: uppercase; }
+  main { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 14px; max-width: 720px; margin: 0 auto; }
+  .box { background: #fff; border-radius: 12px; padding: 16px; box-shadow: inset 0 0 0 1px #D5DCE3; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input[type=text] { width: 100%; height: 52px; border-radius: 8px; border: 2px solid var(--rand); padding: 0 12px; font-size: 17px; }
+  .klein { font-size: 15px; color: var(--grau); margin: 6px 0 0; }
+  .test { display: flex; flex-direction: column; gap: 10px; }
+  .test h2 { margin: 0; font-size: 20px; }
+  .test p { margin: 0; font-size: 16px; color: var(--grau); }
+  .los { min-height: 60px; border: 0; border-radius: 10px; background: var(--blau); color: #fff; font-size: 20px; font-weight: 600; }
+  .bew { display: flex; gap: 10px; }
+  .bew button { flex: 1; min-height: 52px; border-radius: 10px; border: 0; background: #F0F3F6; color: #3A4D61; font-size: 17px; font-weight: 600; box-shadow: inset 0 0 0 1.5px #C5CED8; }
+  .bew button.ja.an { background: var(--gruen-f); color: var(--gruen); box-shadow: inset 0 0 0 2px var(--gruen); }
+  .bew button.nein.an { background: var(--rot-f); color: var(--rot); box-shadow: inset 0 0 0 2px var(--rot); }
+  .datei { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px; border: 0; border-top: 1px solid #D5DCE3; background: #fff; text-align: left; font-size: 17px; color: #111827; }
+  .datei .ic { width: 34px; height: 34px; border-radius: 6px; background: #FBEAEA; color: #B42323; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .datei .ic.o { background: #E3ECF5; color: #0B3D66; }
+  #t7-liste { border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px #D5DCE3; }
+  #t7-liste:empty { display: none; }
+  .nr { display: inline-flex; width: 30px; height: 30px; border-radius: 50%; background: var(--feld); color: var(--blau); align-items: center; justify-content: center; font-weight: 700; margin-right: 8px; }
+  #ergebnis { background: #FFF1CC; box-shadow: inset 0 0 0 1px #E8C46A; color: #4D3800; }
+  code { font-size: 13px; word-break: break-all; color: var(--grau); }
+</style>
+</head>
+<body>
+<header><h1>Test: Dateien-App öffnen</h1></header>
+<main>
+  <div class="box">
+    <label for="pfad">Ordner auf dem Tablet</label>
+    <input type="text" id="pfad" value="/storage/emulated/0/Documents/Nachweise/3 Reinigungsprotokolle">
+    <p class="klein">Den genauen Pfad zeigt FolderSync beim Ordnerpaar unter „Lokaler Ordner“. Bitte hier eintragen, bevor du die Knöpfe 1 und 3 testest.</p>
+  </div>
+
+  <div class="box" id="ergebnis">Tippe jeden Knopf einmal an und markiere danach „hat geklappt“ oder „ging nicht“. Das Ergebnis steht dann hier.</div>
+
+  <div id="tests"></div>
+
+  <div class="box">
+    <label for="drive">Für Test 6: Link zum Drive-Ordner „Protokolle“</label>
+    <input type="text" id="drive" placeholder="https://drive.google.com/drive/folders/…">
+    <p class="klein">In Drive den Ordner öffnen, „Link kopieren“ und hier einfügen.</p>
+  </div>
+  <div class="box test" id="t7">
+    <h2><span class="nr">7</span>Ordner in der App anzeigen</h2>
+    <p>Die App bittet einmal um Zugriff auf den Ordner und zeigt die PDFs dann selbst an, auch ohne Netz. Beim Freigeben im Auswahlfenster den Ordner „3 Reinigungsprotokolle“ öffnen und unten „Diesen Ordner verwenden“ tippen.</p>
+    <p id="t7-status"></p>
+    <button class="los" id="t7-los">Ordner freigeben</button>
+    <div id="t7-liste"></div>
+    <div class="bew"><button class="ja" data-bew="6" data-v="ja">hat geklappt</button><button class="nein" data-bew="6" data-v="nein">ging nicht</button></div>
+  </div>
+  <input type="file" id="waehler" accept="application/pdf" hidden>
+</main>
+
+<script>
+const TESTS = [
+  { t: "Samsung „Eigene Dateien“ im Ordner", d: "Öffnet die Samsung-Dateien-App direkt im Ordner oben.", url: (p) => "intent:#Intent;action=samsung.myfiles.intent.action.LAUNCH_MY_FILES;package=com.sec.android.app.myfiles;S.samsung.myfiles.intent.extra.START_PATH=" + encodeURIComponent(p) + ";end" },
+  { t: "Samsung „Eigene Dateien“ starten", d: "Öffnet nur die App, ohne bestimmten Ordner.", url: () => "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.sec.android.app.myfiles;end" },
+  { t: "Android „Dateien“ im Ordner", d: "Öffnet die Android-Dateiansicht direkt im Ordner oben.", url: (p) => "intent://com.android.externalstorage.documents/document/" + encodeURIComponent("primary:" + p.replace(/^\/storage\/emulated\/0\/?/, "")) + "#Intent;scheme=content;type=vnd.android.document/directory;action=android.intent.action.VIEW;end" },
+  { t: "Android „Dateien“ starten", d: "Öffnet die Android-Dateiansicht im internen Speicher.", url: () => "intent://com.android.externalstorage.documents/root/primary#Intent;scheme=content;action=android.provider.action.BROWSE;end" },
+  { t: "Dateiauswahl", d: "Öffnet die Dateiauswahl. Dort zum Ordner gehen und eine PDF antippen. Android merkt sich meist den zuletzt benutzten Ordner.", wahl: true },
+  { t: "Drive-Ordner", d: "Öffnet den Ordner in der Google-Drive-App (braucht Netz). Link unten eintragen.", drive: true },
+];
+let erg = {};
+try { erg = JSON.parse(localStorage.getItem("datei-test") || "{}"); } catch (e) {}
+function speichern() { try { localStorage.setItem("datei-test", JSON.stringify(erg)); } catch (e) {} }
+function fallback(i) { return location.protocol === "https:" ? ";S.browser_fallback_url=" + encodeURIComponent(location.href.split("#")[0] + "#fehler-" + (i + 1)) : ""; }
+
+function zeichnen() {
+  document.getElementById("tests").innerHTML = TESTS.map((x, i) =>
+    '<div class="box test"><h2><span class="nr">' + (i + 1) + "</span>" + x.t + "</h2><p>" + x.d + "</p>" +
+    '<button class="los" data-los="' + i + '">Test ' + (i + 1) + " starten</button>" +
+    '<div class="bew"><button class="ja' + (erg[i] === "ja" ? " an" : "") + '" data-bew="' + i + '" data-v="ja">hat geklappt</button><button class="nein' + (erg[i] === "nein" ? " an" : "") + '" data-bew="' + i + '" data-v="nein">ging nicht</button></div></div>').join("");
+  document.querySelectorAll('#t7 [data-bew]').forEach((b) => b.classList.toggle("an", erg[6] === b.dataset.v));
+  const ok = Object.keys(erg).filter((k) => erg[k] === "ja").map((k) => +k + 1);
+  const nein = Object.keys(erg).filter((k) => erg[k] === "nein").map((k) => +k + 1);
+  document.getElementById("ergebnis").innerHTML = (ok.length || nein.length)
+    ? "<b>Ergebnis:</b> geklappt: " + (ok.join(", ") || "–") + " · ging nicht: " + (nein.join(", ") || "–") + "<br><span class=\"klein\">Diese Zeile bitte an Claude schicken.</span>"
+    : "Tippe jeden Knopf einmal an und markiere danach „hat geklappt“ oder „ging nicht“. Das Ergebnis steht dann hier.";
+}
+document.addEventListener("click", (e) => {
+  const los = e.target.closest("[data-los]"), bew = e.target.closest("[data-bew]");
+  if (bew) { erg[bew.dataset.bew] = bew.dataset.v; speichern(); zeichnen(); return; }
+  if (!los) return;
+  const i = +los.dataset.los, x = TESTS[i], pfad = document.getElementById("pfad").value.trim();
+  if (x.wahl) { document.getElementById("waehler").click(); return; }
+  if (x.drive) { const u = document.getElementById("drive").value.trim(); if (!u.startsWith("https://")) { alert("Bitte erst den Drive-Link unten eintragen."); return; } location.href = u; return; }
+  location.href = x.url(pfad).replace(";end", fallback(i) + ";end");
+});
+document.getElementById("waehler").addEventListener("change", (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  location.href = URL.createObjectURL(f);
+});
+/* ---------- Test 7: Ordnerzugriff (File System Access API) ---------- */
+const DB = () => new Promise((ok, fehl) => { const r = indexedDB.open("datei-test", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => fehl(r.error); });
+async function hGet() { try { const d = await DB(); return await new Promise((ok) => { const q = d.transaction("h").objectStore("h").get("ordner"); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
+async function hSet(h) { try { const d = await DB(); d.transaction("h", "readwrite").objectStore("h").put(h, "ordner"); } catch (e) {} }
+const st = (t) => { document.getElementById("t7-status").innerHTML = t; };
+let stapel = [];
+async function zeigeOrdner(h) {
+  const eintraege = [];
+  for await (const [name, e] of h.entries()) {
+    if (e.kind === "directory" || name.toLowerCase().endsWith(".pdf")) eintraege.push({ name, e });
+  }
+  eintraege.sort((a, b) => (a.e.kind === b.e.kind ? b.name.localeCompare(a.name) : a.e.kind === "directory" ? -1 : 1));
+  const l = document.getElementById("t7-liste");
+  l.innerHTML = (stapel.length > 1 ? '<button class="datei" data-hoch="1"><span class="ic o">‹</span>Zurück</button>' : "") +
+    (eintraege.length ? eintraege.map((x, i) => '<button class="datei" data-i="' + i + '"><span class="ic' + (x.e.kind === "directory" ? ' o">DIR' : '">PDF') + "</span>" + x.name + "</button>").join("") : '<div class="datei">Keine PDFs in diesem Ordner.</div>');
+  l.onclick = async (ev) => {
+    const b = ev.target.closest(".datei"); if (!b) return;
+    if (b.dataset.hoch) { stapel.pop(); zeigeOrdner(stapel[stapel.length - 1]); return; }
+    const x = eintraege[+b.dataset.i]; if (!x) return;
+    if (x.e.kind === "directory") { stapel.push(x.e); zeigeOrdner(x.e); return; }
+    const f = await x.e.getFile();
+    location.href = URL.createObjectURL(f);
+  };
+  st("Ordner: <b>" + stapel.map((o) => o.name).join(" › ") + "</b>");
+}
+async function t7Start() {
+  if (!("showDirectoryPicker" in window)) {
+    st(window.isSecureContext ? "Dieser Browser kann keine Ordner freigeben." : "<b>Geht so nicht:</b> Die Seite muss über https geöffnet werden (nicht aus „Eigene Dateien“). Siehe Hinweis von Claude.");
+    document.getElementById("t7-los").disabled = true; document.getElementById("t7-los").style.opacity = .4; return;
+  }
+  const h = await hGet();
+  if (!h) { st("Noch kein Ordner freigegeben."); return; }
+  const p = await h.queryPermission({ mode: "read" });
+  if (p === "granted") { stapel = [h]; zeigeOrdner(h); document.getElementById("t7-los").textContent = "Anderen Ordner freigeben"; }
+  else { st("Ordner „" + h.name + "“ ist gespeichert. Der Zugriff muss neu bestätigt werden."); document.getElementById("t7-los").textContent = "Zugriff bestätigen"; document.getElementById("t7-los").dataset.erneut = "1"; }
+}
+document.getElementById("t7-los").addEventListener("click", async (ev) => {
+  try {
+    let h;
+    if (ev.currentTarget.dataset.erneut) { h = await hGet(); if ((await h.requestPermission({ mode: "read" })) !== "granted") return; delete ev.currentTarget.dataset.erneut; }
+    else { h = await window.showDirectoryPicker({ id: "reinigung", mode: "read", startIn: "documents" }); await hSet(h); }
+    stapel = [h]; zeigeOrdner(h); ev.currentTarget.textContent = "Anderen Ordner freigeben";
+  } catch (e) { st("Abgebrochen oder Fehler: " + e.message); }
+});
+t7Start();
+
+if (location.hash.startsWith("#fehler-")) { erg[+location.hash.slice(8) - 1] = "nein"; speichern(); history.replaceState(null, "", location.href.split("#")[0]); }
+zeichnen();
+</script>
+</body>
+</html>
