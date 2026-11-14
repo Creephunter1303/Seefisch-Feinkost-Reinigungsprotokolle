@@ -6,11 +6,11 @@ Tablet-App für die Reinigungsprotokolle der Verkaufswagen (Seico, Borco Neu, Bo
 
 | Datei | Wofür |
 |---|---|
-| `docs/index.html` | Maske v0.5 der App (dunkler Demo-Balken oben gehört nicht zur App) |
-| `docs/test.html` | Test: Kann die Web-App die Protokoll-PDFs auf dem Tablet anzeigen? |
-| `docs/seefisch.css`, `docs/schriften/` | Seefisch-Designsystem (unverändert) |
+| `app/index.html` | Maske v0.5 der App (dunkler Demo-Balken oben gehört nicht zur App) |
+| `app/test.html` | Test: Kann die Web-App die Protokoll-PDFs auf dem Tablet anzeigen? |
+| `app/seefisch.css`, `app/schriften/` | Seefisch-Designsystem (unverändert) |
 
-**Veröffentlichung:** GitHub Pages aus dem Ordner `docs/` (Settings → Pages → Branch `main`, Ordner `/docs`).
+**Veröffentlichung:** GitHub Pages per GitHub Actions (`.github/workflows/pages.yml`, Ordner `app/`), wie bei der Bestell-App. Einmalig: Settings → Pages → Source „GitHub Actions“.
 
 - App: https://creephunter1303.github.io/Seefisch-Feinkost-Reinigungsprotokolle/
 - Test: https://creephunter1303.github.io/Seefisch-Feinkost-Reinigungsprotokolle/test.html
